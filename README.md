@@ -1,58 +1,290 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HelpDesk SaaS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel **API-only** help desk and work order management system built as a portfolio and learning project. It models how a technical support or maintenance company might run day-to-day operations: clients, equipment, support tickets, work orders, permissions, file attachments, audit history, and background jobs. Consumers integrate via JSON endpoints; there is no server-rendered frontend in this repository.
 
-## About Laravel
+The focus is not a tutorial CRUD app, but a product-shaped codebase with explicit business rules, authorization boundaries, and incremental delivery through milestones.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Area | Status |
+|------|--------|
+| Project foundation (Laravel, migrations scaffold, queue tables) | Implemented |
+| Product documentation (`docs/`) | In progress |
+| Authentication | Planned |
+| Users and roles (Admin, Technician, Attendant) | Planned |
+| Clients (CRUD, validation, uniqueness rules) | Planned |
+| Machines / equipment (per-client linkage) | Planned |
+| Support tickets (status, priority, policies) | Planned |
+| Work orders (ticket conversion, transactions, numbering) | Planned |
+| File uploads (images, PDF, storage cleanup) | Planned |
+| Change history / audit trail | Planned |
+| Notifications and queue jobs | Planned |
+| REST API (resources, versioning, consistent responses) | Planned |
+| Automated tests (PHPUnit; Pest optional) | Planned |
+| API documentation and refinement | Planned |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Project Goals
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Learning**
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- Practice Laravel in a realistic domain (support + field service), not isolated CRUD exercises.
+- Work with Eloquent relationships, Form Requests, Policies, observers/events, queues, and file storage.
+- Build confidence with automated tests against business rules.
 
-## Agentic Development
+**Engineering**
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- Keep controllers thin and push rules into the domain layer where they belong.
+- Enforce authorization at the policy/gate level on every API action.
+- Record audit history automatically instead of relying on manual logging.
+- Ship incrementally via milestones so each phase stays reviewable and deployable in spirit.
+
+**Product mindset**
+
+- Simulate operational workflows (open ticket → assign → work order → resolve).
+- Design with future SaaS concerns in mind (roles, audit, async work) without over-building on day one.
+
+---
+
+## Architecture and Development Philosophy
+
+The application follows Laravel’s MVC structure with conventions chosen for clarity and maintainability:
+
+- **Thin controllers** — HTTP layer delegates validation, authorization, and heavy logic elsewhere.
+- **Form Requests** — Input validation and authorization hooks stay explicit and reusable.
+- **Policies and Gates** — Role-based access (e.g. who may change technical ticket status) is centralized.
+- **Explicit business rules** — Documented requirements (see `docs/01-visao-geral.md`) drive implementation; magic behavior in controllers is avoided.
+- **Transactions** — Critical flows (e.g. creating a work order from a ticket) run inside database transactions.
+- **Observers / events** — Side effects such as audit entries and notifications stay decoupled from controllers.
+- **Documentation-first** — Scope, roles, and business rules are defined before or alongside code.
+- **Milestone-driven delivery** — Each phase delivers a coherent slice (foundation → tickets → OS → files → queue/tests → polish).
+
+---
+
+## Modules
+
+### Authentication
+
+API authentication for internal users (e.g. token or Sanctum). Foundation for role-aware requests and policy checks.
+
+### Users and Roles
+
+Three roles drive permissions:
+
+- **Admin** — Full system management.
+- **Technician** — Execute work orders, update technical ticket status, attach files.
+- **Attendant** — Create tickets, manage clients; restricted from critical technical status changes.
+
+### Clients
+
+Legal entities (individual or company) served by the company. Linked to machines and tickets; deletion guarded when dependencies exist.
+
+### Machines
+
+Equipment owned by a client (serial number, linkage). Every machine belongs to exactly one client.
+
+### Support Tickets
+
+Operational requests with priority (`low`, `medium`, `high`) and status (`open`, `in_progress`, `resolved`, `cancelled`). Optional machine association; resolution metadata when closed.
+
+### Work Orders
+
+Formal service orders generated from tickets. Single work order per ticket; lifecycle distinct from ticket status.
+
+### File Uploads
+
+Attachments on relevant records (images and PDF). Physical removal from storage when records are deleted.
+
+### History / Audit
+
+Automatic log of meaningful changes (status, amounts, assignee, etc.) with user and timestamp.
+
+### Notifications / Queue
+
+Async processing for notifications and other background work via Laravel queues and jobs.
+
+### Tests
+
+Feature and unit tests covering authorization, state transitions, and core business rules.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | [Laravel](https://laravel.com) 13.x |
+| Language | PHP 8.3+ |
+| Database | PostgreSQL (local instance via Docker — **planned**, not set up yet) |
+| API | REST / JSON |
+| Auth & authorization | Laravel Auth, Sanctum (or equivalent), Policies, Gates |
+| Storage | Laravel filesystem (local / configurable) |
+| Background work | Queue, Jobs (database driver by default) |
+| Testing | PHPUnit 12 |
+| Code style | Laravel Pint |
+| Local infrastructure | Docker (PostgreSQL container — to be added) |
+
+---
+
+## Business Rules
+
+A subset of enforced or planned rules (full list in `docs/01-visao-geral.md`):
+
+| ID | Rule |
+|----|------|
+| RN-001 | A client may have multiple machines. |
+| RN-003 | A client cannot be deleted while machines or tickets are linked. |
+| RN-010 | A cancelled ticket cannot be resolved. |
+| RN-011 | Only **Technician** or **Admin** may change ticket status. |
+| RN-013 | A ticket may generate **at most one** work order. |
+| RN-014 | Work order creation runs inside a **database transaction**. |
+| RN-016 | A finalized work order cannot return to `open`. |
+| RN-019 | Relevant changes must produce an **automatic** audit history entry (user, date, change). |
+
+Additional rules cover unique tax IDs per client, serial numbers per client, allowed upload types, and resolution metadata on tickets.
+
+---
+
+## Roadmap / Milestones
+
+### Milestone 1 — Foundation
+
+- Laravel project setup
+- Authentication
+- Users and roles
+- Clients and machines
+
+### Milestone 2 — Tickets
+
+- Ticket CRUD
+- Status and priority workflows
+- Policies and business rule enforcement
+
+### Milestone 3 — Work Orders
+
+- Ticket → work order conversion
+- Transactions and numbering
+
+### Milestone 4 — Files and History
+
+- Uploads and storage
+- Observers / events
+- Audit trail
+
+### Milestone 5 — Queue and Tests
+
+- Queue workers and notifications
+- Feature and unit test coverage
+
+### Milestone 6 — Refinement
+
+- API consistency and documentation
+- Refactoring and portfolio readiness
+
+---
+
+## Installation
+
+### Requirements
+
+- PHP 8.3+
+- Composer 2.x
+- Docker and Docker Compose (for local PostgreSQL — **coming soon**)
+
+### Setup
 
 ```bash
-composer require laravel/boost --dev
+git clone <repository-url> helpdesk-saas
+cd helpdesk-saas
 
-php artisan boost:install
+composer install
+
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+**Database (planned)** — Local development will use **PostgreSQL** running in a **Docker** container. `docker-compose` and the matching `.env` settings are not in the repository yet; until then, the default Laravel `.env.example` may still point at SQLite for bootstrapping only.
 
-## Contributing
+When Docker is added, configuration will look like this:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=helpdesk_saas
+DB_USERNAME=helpdesk
+DB_PASSWORD=secret
+```
 
-## Code of Conduct
+```bash
+# After docker-compose is available:
+docker compose up -d
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+php artisan migrate
+```
 
-## Security Vulnerabilities
+### Run locally
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan serve
+```
+
+For development with queue and logs together:
+
+```bash
+composer dev
+```
+
+Or use the one-shot setup script (once the database stack is in place):
+
+```bash
+composer setup
+```
+
+### Tests
+
+```bash
+composer test
+# or
+php artisan test
+```
+
+### Queue worker
+
+When notifications and jobs are enabled:
+
+```bash
+php artisan queue:work
+```
+
+---
+
+## Documentation
+
+Detailed product scope, roles, business rules, and milestones (Portuguese):
+
+- [`docs/01-visao-geral.md`](docs/01-visao-geral.md)
+
+---
+
+## Future Improvements
+
+Directions aligned with a SaaS product, not committed to the current scope:
+
+- **Docker Compose for PostgreSQL** — Reproducible local database and documented connection defaults.
+- **Dashboard endpoints** — KPIs: open tickets, SLA-style metrics, technician workload.
+- **Multi-tenancy** — Isolate data per company (tenant_id or dedicated databases).
+- **Email notifications** — Ticket updates, assignment, work order completion.
+- **API versioning and OpenAPI** — Stable contracts and generated documentation for integrators.
+- **OAuth / API clients** — Third-party integrations beyond first-party tokens.
+- **Billing and plans** — Subscription tiers per tenant.
+- **Reporting** — Export and scheduled reports for operations management.
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
