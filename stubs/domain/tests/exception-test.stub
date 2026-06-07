@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ exceptionNamespace }};
+use Tests\TestCase;
+
+class {{ class }}ExceptionTest extends TestCase
+{
+    public function test_it_can_be_thrown_with_a_message(): void
+    {
+        $this->expectException({{ class }}Exception::class);
+        $this->expectExceptionMessage('Domain error');
+
+        throw new {{ class }}Exception('Domain error');
+    }
+}

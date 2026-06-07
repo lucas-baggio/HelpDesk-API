@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelNamespace }};
+use Illuminate\Database\Eloquent\Model;
+use Tests\TestCase;
+
+class {{ class }}Test extends TestCase
+{
+    public function test_it_is_an_eloquent_model(): void
+    {
+        $model = new {{ class }};
+
+        $this->assertInstanceOf(Model::class, $model);
+    }
+}
