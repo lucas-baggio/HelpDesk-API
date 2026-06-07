@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }};
+
+use Database\Factories\{{ class }}Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class {{ class }} extends Model
+{
+    /** @use HasFactory<{{ class }}Factory> */
+    use HasFactory;
+
+    protected static function newFactory(): {{ class }}Factory
+    {
+        return {{ class }}Factory::new();
+    }
+}

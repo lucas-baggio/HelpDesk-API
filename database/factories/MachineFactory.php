@@ -2,15 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Domains\User\Models\User;
+use App\Domains\Machine\Models\Machine;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<Machine>
  */
-class UserFactory extends Factory
+class MachineFactory extends Factory
 {
-    protected $model = User::class;
+    protected $model = Machine::class;
 
     /**
      * @return array<string, mixed>
