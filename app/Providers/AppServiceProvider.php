@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domains\Client\Models\Client;
+use App\Domains\Client\Policies\ClientPolicy;
 use App\Domains\User\Models\User;
 use App\Domains\User\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -23,5 +25,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
     }
 }
