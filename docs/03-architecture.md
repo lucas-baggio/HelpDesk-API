@@ -45,7 +45,7 @@ The architecture favors **pragmatic separation of responsibilities**: enough str
 
 **Explicit business rules** — Rules documented in product specs are implemented in Actions (and validated at the edge with Requests/Policies), not implied in Blade or scattered helpers.
 
-**Laravel-native development** — Form Requests, Policies, Eloquent, Jobs, Events, and Sanctum (or equivalent) are first-class; no parallel container or custom ORM.
+**Laravel-native development** — Form Requests, Policies, Eloquent, Jobs, Events, and JWT (via `php-open-source-saver/jwt-auth`) are first-class; no parallel container or custom ORM.
 
 **Consistent API responses** — Success and error payloads follow a single envelope so clients and tests can rely on shape.
 
@@ -62,20 +62,31 @@ The application root under `app/` is split into **Domains** (feature modules) an
 ```
 app/
 ├── Domains/
-│   ├── Auth/
-│   ├── User/
-│   ├── Client/
-│   ├── Machine/
-│   ├── Ticket/
-│   └── WorkOrder/
+│   ├── Auth/         # JWT login + /me endpoint
+│   ├── User/         # User management, roles, UserPolicy
+│   ├── Client/       # Client CRUD, ClientPolicy
+│   ├── Machine/      # Machine CRUD linked to clients, MachinePolicy
+│   ├── Ticket/       # (Milestone 2)
+│   └── WorkOrder/    # (Milestone 3)
 │
 ├── Shared/
-│   ├── Exceptions/
-│   ├── Http/
+│   ├── Exceptions/   # ApiException hierarchy + ApiExceptionRenderer
+│   ├── Http/         # ApiResponse, HttpStatus, BaseJsonResource, ApiController
 │   ├── Traits/
 │   ├── Helpers/
 │   └── Support/
 ```
+
+### Implementation status
+
+| Domain | Implemented |
+|--------|-------------|
+| `Auth` | Login, /me (JWT) |
+| `User` | Create, Update (list/show/delete pending) |
+| `Client` | Full CRUD + pagination + deactivation |
+| `Machine` | Full CRUD + pagination + deactivation |
+| `Ticket` | Planned — Milestone 2 |
+| `WorkOrder` | Planned — Milestone 3 |
 
 **Domains** — Each directory is a self-contained module for one bounded context: its own models, actions, HTTP layer, and policies. Cross-domain calls should go through explicit Actions or small application services, not through foreign controllers.
 
@@ -278,3 +289,72 @@ HelpDesk SaaS prioritizes:
 - **Long-term scalability** — New domains add a folder and repeat the same structure; Shared cross-cutting concerns do not sprawl into domains.
 
 This document is the reference for implementing new endpoints: add or extend a domain module, wire the request flow, enforce rules in Actions, and return responses through the shared API contract.
+
+---
+
+## Authentication Strategy
+
+API authentication uses **JWT** via [`php-open-source-saver/jwt-auth`](https://github.com/PHP-Open-Source-Saver/jwt-auth). The choice over Sanctum was driven by the stateless nature of the API — no session or database-backed token storage is required.
+
+- The default auth guard is `api` (configured in `config/auth.php`)
+- JWT TTL defaults to 10,080 minutes (7 days), suitable for long-lived clients without logout friction
+- Token expiry and invalid token exceptions are caught by `ApiExceptionRenderer` and returned as `401` in the standard error envelope
+- All protected endpoints are wrapped in the `auth:api` middleware
+- User status (`is_active`) is checked at login; inactive users receive `403 Inactive account`
+
+The `Auth` domain owns the login and `/me` endpoints; no session-based or cookie-based auth is used.
+
+---
+
+## Domain Scaffolding
+
+New domains can be bootstrapped with the `make:domain` Artisan command:
+
+```bash
+# Create base structure (Model, Policy, Exception)
+php artisan make:domain Client
+
+# Full structure with all directories
+php artisan make:domain Ticket --full
+
+# Full structure with test stubs
+php artisan make:domain WorkOrder --full --tests
+
+# Overwrite existing files
+php artisan make:domain Client --force
+```
+
+The command creates the domain folder under `app/Domains/{Name}/` with the selected components. Stubs live in `stubs/domain/`.
+
+---
+
+## Pagination Convention
+
+List endpoints return paginated responses via `ApiResponse::paginated()`:
+
+```json
+{
+  "success": true,
+  "message": "Clients retrieved successfully.",
+  "data": [ ... ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 42,
+    "last_page": 3
+  }
+}
+```
+
+The `meta` key contains Laravel's `LengthAwarePaginator` metadata. Filters (e.g. `?is_active=1`, `?client_id=uuid`) are passed as query parameters and handled inside the Action, not the Controller.
+
+---
+
+## Deactivation vs. Hard Delete
+
+Most entities in this system support **deactivation** (`is_active = false`) instead of hard delete. This preserves referential integrity (e.g. a machine linked to a ticket history cannot simply disappear) and supports audit traceability.
+
+- `DELETE /api/clients/{id}` — sets `is_active = false` (blocked when machines/tickets exist, per RN-007)
+- `DELETE /api/machines/{id}` — sets `is_active = false`
+
+Hard deletes are only used for entities with no downstream references. The rule is documented in RN-007 and reflected in the `DeactivateClientAction` and `DeactivateMachineAction`.

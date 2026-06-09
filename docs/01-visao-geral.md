@@ -6,49 +6,47 @@
 
 Desenvolver um sistema web para gerenciamento de clientes, máquinas, chamados técnicos e ordens de serviço.
 
-O sistema deverá permitir controle operacional de atendimentos técnicos, histórico de alterações, anexos e permissões por usuário.
+O sistema permite controle operacional de atendimentos técnicos, histórico de alterações, anexos e permissões por usuário.
 
-O projeto possui caráter de portfólio e aprendizado, mas será desenvolvido com mentalidade de produto SaaS real.
+O projeto possui caráter de portfólio e aprendizado, mas é desenvolvido com mentalidade de produto SaaS real.
 
 ---
 
 ## 2. Objetivos Técnicos
 
-O projeto servirá para praticar e consolidar conhecimentos em:
+O projeto serve para praticar e consolidar conhecimentos em:
 
-* Laravel
-* Arquitetura MVC
-* Regras de negócio
+* Laravel (Pragmatic Modular Architecture)
+* API-only REST + JWT
+* Regras de negócio explícitas em Actions
 * Relacionamentos Eloquent
-* Policies e autorização
+* Policies e autorização por roles
 * Upload de arquivos
 * Queue e Jobs
-* Eventos e Observers
-* Testes automatizados
-* Estruturação de produto real
+* Eventos e auditoria automática
+* Testes automatizados (PHPUnit)
 
 ---
 
-## 3. Escopo Inicial
+## 3. Escopo
 
-O sistema possuirá os seguintes módulos:
-
-1. Autenticação
-2. Usuários e permissões
-3. Clientes
-4. Máquinas
-5. Chamados
-6. Ordens de Serviço
-7. Upload de arquivos
-8. Histórico e auditoria
-9. Jobs e notificações
-10. Dashboard (opcional)
+| Módulo | Status |
+|--------|--------|
+| Autenticação (JWT) | ✅ Implementado |
+| Usuários e permissões | ✅ Implementado (create, update) |
+| Clientes | ✅ Implementado (CRUD completo) |
+| Máquinas | ✅ Implementado (CRUD completo) |
+| Chamados | 🔜 Próximo |
+| Ordens de Serviço | 🔜 Planejado |
+| Upload de arquivos | 🔜 Planejado |
+| Histórico e auditoria | 🔜 Planejado |
+| Jobs e notificações | 🔜 Planejado |
 
 ---
 
 ## 4. Papéis do Sistema
 
-O sistema terá inicialmente três tipos de usuário.
+O sistema possui três tipos de usuário.
 
 ### Admin
 
@@ -56,244 +54,122 @@ Responsável pelo gerenciamento completo do sistema.
 
 Permissões:
 
-* Gerenciar usuários
-* Gerenciar clientes
-* Gerenciar máquinas
-* Gerenciar chamados
-* Gerenciar OS
+* Gerenciar usuários (create, update)
+* Gerenciar clientes (CRUD)
+* Gerenciar máquinas (CRUD)
+* Gerenciar chamados e OS
 * Visualizar histórico
-* Configurações futuras
 
 ---
 
-### Técnico
+### Técnico (`tecnico`)
 
 Responsável pela execução dos serviços.
 
 Permissões:
 
+* Visualizar clientes e máquinas
 * Visualizar chamados
-* Alterar status de chamados
-* Executar OS
+* Alterar status técnicos de chamados
+* Executar e atualizar OS
 * Anexar arquivos
 * Registrar informações técnicas
 
 ---
 
-### Atendente
+### Atendente (`atendente`)
 
 Responsável pelo atendimento inicial.
 
 Permissões:
 
+* Criar e editar clientes
+* Criar e editar máquinas
 * Criar chamados
-* Gerenciar clientes
-* Visualizar informações
-* Sem permissão para alterar status técnicos críticos
+* Visualizar informações gerais
+* **Não pode** alterar status técnicos críticos nem finalizar OS
 
 ---
 
-## 5. Diretrizes de Desenvolvimento
+## 5. Regras de Negócio
 
-O projeto seguirá as seguintes diretrizes:
+As regras de negócio autoritativas estão em [`02-business-rules.md`](02-business-rules.md) com identificadores estáveis (`RN-001` a `RN-033`).
 
-* Código limpo
-* Responsabilidade única
-* Regras de negócio explícitas
-* Uso de Form Requests
-* Uso de Policies quando necessário
-* Evitar lógica excessiva em Controllers
-* Commits organizados
+Resumo por domínio:
+
+| Domínio | Regras |
+|---------|--------|
+| Usuários e roles | RN-001 – RN-004 |
+| Clientes | RN-005 – RN-008 |
+| Máquinas | RN-009 – RN-012 |
+| Chamados | RN-013 – RN-020 |
+| Ordens de Serviço | RN-021 – RN-025 |
+| Arquivos | RN-026 – RN-029 |
+| Histórico e auditoria | RN-030 – RN-033 |
+
+---
+
+## 6. Diretrizes de Desenvolvimento
+
+* Código limpo, responsabilidade única
+* Regras de negócio explícitas em Actions (nunca em Controllers)
+* Form Requests para validação e autorização HTTP
+* Policies para controle de permissões por role
+* Transações em operações multi-step
+* Commits organizados por domínio
 * Documentação atualizada junto do desenvolvimento
-
-O desenvolvimento será incremental por milestones.
-
----
-
-# Regras de Negócio
-
-## Clientes
-
-RN-001
-
-Cliente pode possuir múltiplas máquinas.
-
-RN-002
-
-CPF/CNPJ não pode ser duplicado.
-
-RN-003
-
-Exclusão de cliente deve ser bloqueada caso existam chamados ou máquinas vinculadas.
+* 100% de cobertura via testes automatizados dos fluxos implementados
 
 ---
 
-## Máquinas
+## 7. Milestones
 
-RN-004
+### Milestone 1 — Fundação ✅ Concluído
 
-Toda máquina deve pertencer a um cliente.
-
-RN-005
-
-Número de série deve ser único por cliente.
-
----
-
-## Chamados
-
-RN-006
-
-Todo chamado deve estar vinculado a cliente.
-
-RN-007
-
-Chamado pode opcionalmente possuir máquina associada.
-
-RN-008
-
-Prioridade permitida:
-
-* baixa
-* media
-* alta
-
-RN-009
-
-Status permitidos:
-
-* aberto
-* em_andamento
-* resolvido
-* cancelado
-
-RN-010
-
-Chamado cancelado não pode ser resolvido.
-
-RN-011
-
-Somente técnico ou admin podem alterar status.
-
-RN-012
-
-Ao resolver chamado:
-
-* registrar data_resolucao
-* registrar usuário responsável
+* Projeto Laravel com PostgreSQL
+* JWT Authentication (`/auth/login`, `/auth/me`)
+* Comando `make:domain` para scaffolding
+* Layer compartilhado de respostas API (`ApiResponse`, `ApiExceptionRenderer`)
+* Módulo User (create, update) com roles e policies
+* Módulo Client (CRUD completo + paginação)
+* Módulo Machine (CRUD completo + paginação, vinculado a Client)
 
 ---
 
-## Ordem de Serviço
+### Milestone 2 — Chamados 🔜
 
-RN-013
-
-Chamado pode gerar apenas uma única OS.
-
-RN-014
-
-Criação de OS deve ocorrer dentro de transação.
-
-RN-015
-
-Status permitidos:
-
-* aberta
-* em_execucao
-* finalizada
-
-RN-016
-
-OS finalizada não pode retornar para aberta.
+* CRUD de chamados
+* Status e prioridade
+* Transições de status com policies
+* Regras RN-013 a RN-020
 
 ---
 
-## Arquivos
+### Milestone 3 — Ordem de Serviço
 
-RN-017
-
-Upload permitido:
-
-* imagem
-* PDF
-
-RN-018
-
-Arquivo removido deve ser excluído fisicamente do storage.
+* Conversão chamado → OS (transação)
+* Numeração sequencial
+* Lifecycle control (RN-021 – RN-025)
 
 ---
 
-## Histórico
+### Milestone 4 — Arquivos e Histórico
 
-RN-019
-
-Toda alteração relevante deve gerar histórico automático.
-
-Exemplos:
-
-* alteração de status
-* alteração de valor
-* alteração de responsável
-
-Histórico deve registrar:
-
-* usuário
-* data
-* alteração realizada
+* Upload (imagem e PDF)
+* Remoção física do storage
+* Observer/Event para auditoria automática
 
 ---
 
-# Milestones do Projeto
+### Milestone 5 — Jobs e Notificações
 
-## Milestone 1 — Fundação
-
-* Projeto Laravel
-* Auth
-* Users + Roles
-* Clientes
-* Máquinas
+* Queue workers
+* Notificações por email/push em eventos-chave
 
 ---
 
-## Milestone 2 — Chamados
+### Milestone 6 — Refinamento
 
-* CRUD
-* Status
-* Prioridade
-* Policies
-* Regras de negócio
-
----
-
-## Milestone 3 — Ordem de Serviço
-
-* Conversão chamado → OS
-* Transações
-* Numeração
-
----
-
-## Milestone 4 — Arquivos e Histórico
-
-* Upload
-* Storage
-* Observer/Event
-* Auditoria
-
----
-
-## Milestone 5 — Jobs e Testes
-
-* Queue
-* Notificações
-* Feature Tests
-* Unit Tests
-
----
-
-## Milestone 6 — Refinamento
-
-* Dashboard
-* Melhorias visuais
-* Refatorações
+* Cobertura de testes ampliada
+* OpenAPI / Swagger
 * Preparação de portfólio

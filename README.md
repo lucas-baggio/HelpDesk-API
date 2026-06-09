@@ -1,114 +1,28 @@
 # HelpDesk SaaS
 
-A Laravel **API-only** help desk and work order management system built as a portfolio and learning project. It models how a technical support or maintenance company might run day-to-day operations: clients, equipment, support tickets, work orders, permissions, file attachments, audit history, and background jobs. Consumers integrate via JSON endpoints; there is no server-rendered frontend in this repository.
+A Laravel **API-only** help desk and work order management system built as a portfolio project. It models how a technical support or maintenance company might run day-to-day operations: clients, equipment, support tickets, work orders, permissions, file attachments, audit history, and background jobs. Consumers integrate via JSON endpoints; there is no server-rendered frontend in this repository.
 
 The focus is not a tutorial CRUD app, but a product-shaped codebase with explicit business rules, authorization boundaries, and incremental delivery through milestones.
 
 ---
 
-## Features
+## Status
 
 | Area | Status |
 |------|--------|
-| Project foundation (Laravel, migrations scaffold, queue tables) | Implemented |
-| Product documentation (`docs/`) | In progress |
-| Authentication | Planned |
-| Users and roles (Admin, Technician, Attendant) | Planned |
-| Clients (CRUD, validation, uniqueness rules) | Planned |
-| Machines / equipment (per-client linkage) | Planned |
-| Support tickets (status, priority, policies) | Planned |
-| Work orders (ticket conversion, transactions, numbering) | Planned |
-| File uploads (images, PDF, storage cleanup) | Planned |
-| Change history / audit trail | Planned |
-| Notifications and queue jobs | Planned |
-| REST API (resources, versioning, consistent responses) | Planned |
-| Automated tests (PHPUnit; Pest optional) | Planned |
-| API documentation and refinement | Planned |
-
----
-
-## Project Goals
-
-**Learning**
-
-- Practice Laravel in a realistic domain (support + field service), not isolated CRUD exercises.
-- Work with Eloquent relationships, Form Requests, Policies, observers/events, queues, and file storage.
-- Build confidence with automated tests against business rules.
-
-**Engineering**
-
-- Keep controllers thin and push rules into the domain layer where they belong.
-- Enforce authorization at the policy/gate level on every API action.
-- Record audit history automatically instead of relying on manual logging.
-- Ship incrementally via milestones so each phase stays reviewable and deployable in spirit.
-
-**Product mindset**
-
-- Simulate operational workflows (open ticket → assign → work order → resolve).
-- Design with future SaaS concerns in mind (roles, audit, async work) without over-building on day one.
-
----
-
-## Architecture and Development Philosophy
-
-The application follows Laravel’s MVC structure with conventions chosen for clarity and maintainability:
-
-- **Thin controllers** — HTTP layer delegates validation, authorization, and heavy logic elsewhere.
-- **Form Requests** — Input validation and authorization hooks stay explicit and reusable.
-- **Policies and Gates** — Role-based access (e.g. who may change technical ticket status) is centralized.
-- **Explicit business rules** — Documented requirements (see `docs/01-visao-geral.md`) drive implementation; magic behavior in controllers is avoided.
-- **Transactions** — Critical flows (e.g. creating a work order from a ticket) run inside database transactions.
-- **Observers / events** — Side effects such as audit entries and notifications stay decoupled from controllers.
-- **Documentation-first** — Scope, roles, and business rules are defined before or alongside code.
-- **Milestone-driven delivery** — Each phase delivers a coherent slice (foundation → tickets → OS → files → queue/tests → polish).
-
----
-
-## Modules
-
-### Authentication
-
-API authentication for internal users (e.g. token or Sanctum). Foundation for role-aware requests and policy checks.
-
-### Users and Roles
-
-Three roles drive permissions:
-
-- **Admin** — Full system management.
-- **Technician** — Execute work orders, update technical ticket status, attach files.
-- **Attendant** — Create tickets, manage clients; restricted from critical technical status changes.
-
-### Clients
-
-Legal entities (individual or company) served by the company. Linked to machines and tickets; deletion guarded when dependencies exist.
-
-### Machines
-
-Equipment owned by a client (serial number, linkage). Every machine belongs to exactly one client.
-
-### Support Tickets
-
-Operational requests with priority (`low`, `medium`, `high`) and status (`open`, `in_progress`, `resolved`, `cancelled`). Optional machine association; resolution metadata when closed.
-
-### Work Orders
-
-Formal service orders generated from tickets. Single work order per ticket; lifecycle distinct from ticket status.
-
-### File Uploads
-
-Attachments on relevant records (images and PDF). Physical removal from storage when records are deleted.
-
-### History / Audit
-
-Automatic log of meaningful changes (status, amounts, assignee, etc.) with user and timestamp.
-
-### Notifications / Queue
-
-Async processing for notifications and other background work via Laravel queues and jobs.
-
-### Tests
-
-Feature and unit tests covering authorization, state transitions, and core business rules.
+| Project foundation (Laravel, PostgreSQL, migrations) | ✅ Done |
+| `make:domain` scaffolding command | ✅ Done |
+| Consistent API response layer (`ApiResponse`, `BaseJsonResource`) | ✅ Done |
+| Centralized exception handling (`ApiExceptionRenderer`) | ✅ Done |
+| JWT Authentication (`/auth/login`, `/auth/me`) | ✅ Done |
+| Users and roles (Admin, Technician, Attendant) — Create, Update | ✅ Done |
+| Clients — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
+| Machines — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
+| Support Tickets | 🔜 Next |
+| Work Orders | 🔜 Planned |
+| File uploads | 🔜 Planned |
+| Change history / audit trail | 🔜 Planned |
+| Notifications and queue jobs | 🔜 Planned |
 
 ---
 
@@ -116,73 +30,85 @@ Feature and unit tests covering authorization, state transitions, and core busin
 
 | Layer | Technology |
 |-------|------------|
-| Framework | [Laravel](https://laravel.com) 13.x |
-| Language | PHP 8.3+ |
-| Database | PostgreSQL (local instance via Docker — **planned**, not set up yet) |
+| Framework | Laravel 13.13 |
+| Language | PHP 8.3.6 |
+| Database | PostgreSQL 16.14 (Docker) |
+| Authentication | JWT — [`php-open-source-saver/jwt-auth`](https://github.com/PHP-Open-Source-Saver/jwt-auth) 2.9.2 |
+| Authorization | Laravel Policies + Gates |
 | API | REST / JSON |
-| Auth & authorization | Laravel Auth, Sanctum (or equivalent), Policies, Gates |
-| Storage | Laravel filesystem (local / configurable) |
-| Background work | Queue, Jobs (database driver by default) |
-| Testing | PHPUnit 12 |
+| Testing | PHPUnit 12.5 |
 | Code style | Laravel Pint |
-| Local infrastructure | Docker (PostgreSQL container — to be added) |
+
+---
+
+## Architecture
+
+The application follows **Pragmatic Modular Laravel Architecture**: domain-oriented modules under `app/Domains/`, shared cross-cutting code under `app/Shared/`, and Laravel's native building blocks throughout.
+
+```
+app/
+├── Domains/
+│   ├── Auth/         # JWT login, /me
+│   ├── User/         # User management + roles
+│   ├── Client/       # Client CRUD
+│   └── Machine/      # Machine CRUD (linked to clients)
+│
+└── Shared/
+    ├── Exceptions/   # ApiException hierarchy + centralized renderer
+    └── Http/         # ApiResponse, HttpStatus, BaseJsonResource, ApiController
+```
+
+Every request follows the same path: `Route → Controller → Request (validate + authorize) → Action (business logic) → Resource → ApiResponse`.
+
+For the full architecture rationale, see [`docs/03-architecture.md`](docs/03-architecture.md).
+
+---
+
+## API Response Format
+
+All endpoints return a consistent JSON envelope:
+
+**Success**
+```json
+{
+  "success": true,
+  "message": "Client created successfully.",
+  "data": { ... }
+}
+```
+
+**Paginated list**
+```json
+{
+  "success": true,
+  "message": "Clients retrieved successfully.",
+  "data": [ ... ],
+  "meta": { "current_page": 1, "per_page": 15, "total": 42, "last_page": 3 }
+}
+```
+
+**Error / Validation**
+```json
+{
+  "success": false,
+  "message": "The given data was invalid.",
+  "errors": { "email": ["The email field is required."] }
+}
+```
 
 ---
 
 ## Business Rules
 
-A subset of enforced or planned rules (full list in `docs/01-visao-geral.md`):
+The complete rule set lives in [`docs/02-business-rules.md`](docs/02-business-rules.md). Key highlights:
 
-| ID | Rule |
-|----|------|
-| RN-001 | A client may have multiple machines. |
-| RN-003 | A client cannot be deleted while machines or tickets are linked. |
-| RN-010 | A cancelled ticket cannot be resolved. |
-| RN-011 | Only **Technician** or **Admin** may change ticket status. |
-| RN-013 | A ticket may generate **at most one** work order. |
-| RN-014 | Work order creation runs inside a **database transaction**. |
-| RN-016 | A finalized work order cannot return to `open`. |
-| RN-019 | Relevant changes must produce an **automatic** audit history entry (user, date, change). |
-
-Additional rules cover unique tax IDs per client, serial numbers per client, allowed upload types, and resolution metadata on tickets.
-
----
-
-## Roadmap / Milestones
-
-### Milestone 1 — Foundation
-
-- Laravel project setup
-- Authentication
-- Users and roles
-- Clients and machines
-
-### Milestone 2 — Tickets
-
-- Ticket CRUD
-- Status and priority workflows
-- Policies and business rule enforcement
-
-### Milestone 3 — Work Orders
-
-- Ticket → work order conversion
-- Transactions and numbering
-
-### Milestone 4 — Files and History
-
-- Uploads and storage
-- Observers / events
-- Audit trail
-
-### Milestone 5 — Queue and Tests
-
-- Queue workers and notifications
-- Feature and unit test coverage
-
-### Milestone 6 — Refinement
-
-- API consistency and documentation
-- Refactoring and portfolio readiness
+| Domain | Key Rules |
+|--------|-----------|
+| Users | Admin has full access (RN-001); only admin can manage users |
+| Clients | CPF/CNPJ unique (RN-006); blocked from deletion while machines/tickets exist (RN-007) |
+| Machines | Must belong to a client (RN-009); serial number unique per client (RN-011) |
+| Tickets | Cancelled ticket cannot be resolved (RN-017); only tecnico/admin may change status (RN-018) |
+| Work Orders | One work order per ticket max (RN-021); finalized cannot return to open (RN-024) |
 
 ---
 
@@ -192,23 +118,36 @@ Additional rules cover unique tax IDs per client, serial numbers per client, all
 
 - PHP 8.3+
 - Composer 2.x
-- Docker and Docker Compose (for local PostgreSQL — **coming soon**)
+- Docker (for PostgreSQL)
 
 ### Setup
 
 ```bash
-git clone <repository-url> helpdesk-saas
+git clone https://github.com/lucas-baggio/HelpDesk-API helpdesk-saas
 cd helpdesk-saas
 
 composer install
 
 cp .env.example .env
 php artisan key:generate
+php artisan jwt:secret
 ```
 
-**Database (planned)** — Local development will use **PostgreSQL** running in a **Docker** container. `docker-compose` and the matching `.env` settings are not in the repository yet; until then, the default Laravel `.env.example` may still point at SQLite for bootstrapping only.
+### Database
 
-When Docker is added, configuration will look like this:
+Start PostgreSQL via Docker:
+
+```bash
+docker run -d \
+  --name helpdesk-postgres \
+  -e POSTGRES_DB=helpdesk_saas \
+  -e POSTGRES_USER=helpdesk \
+  -e POSTGRES_PASSWORD=secret \
+  -p 5432:5432 \
+  postgres:16
+```
+
+Update `.env`:
 
 ```env
 DB_CONNECTION=pgsql
@@ -217,13 +156,28 @@ DB_PORT=5432
 DB_DATABASE=helpdesk_saas
 DB_USERNAME=helpdesk
 DB_PASSWORD=secret
+
+JWT_SECRET=<generated by jwt:secret>
+JWT_TTL=10080
 ```
 
-```bash
-# After docker-compose is available:
-docker compose up -d
+Run migrations:
 
+```bash
 php artisan migrate
+```
+
+### Seed an admin user
+
+```bash
+php artisan tinker
+>>> App\Domains\User\Models\User::create([
+...   'name' => 'Admin',
+...   'email' => 'admin@example.com',
+...   'password' => bcrypt('password'),
+...   'role' => 'admin',
+...   'is_active' => true,
+... ]);
 ```
 
 ### Run locally
@@ -232,59 +186,92 @@ php artisan migrate
 php artisan serve
 ```
 
-For development with queue and logs together:
+### Run tests
+
+Tests run against a separate PostgreSQL database (`helpdesk_saas_test` by default — see `phpunit.xml`).
 
 ```bash
-composer dev
-```
+# Create test database first:
+docker exec -it helpdesk-postgres psql -U helpdesk -c "CREATE DATABASE helpdesk_saas_test;"
 
-Or use the one-shot setup script (once the database stack is in place):
-
-```bash
-composer setup
-```
-
-### Tests
-
-```bash
-composer test
-# or
 php artisan test
 ```
 
-### Queue worker
+---
 
-When notifications and jobs are enabled:
+## API Reference
 
-```bash
-php artisan queue:work
-```
+Full endpoint documentation: [`docs/05-api-reference.md`](docs/05-api-reference.md)
+
+Quick overview:
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/auth/login` | — | Obtain JWT token |
+| `GET` | `/api/auth/me` | Bearer | Get authenticated user |
+| `POST` | `/api/users` | admin | Create user |
+| `PUT` | `/api/users/{id}` | admin | Update user |
+| `GET` | `/api/clients` | auth | List clients (paginated) |
+| `POST` | `/api/clients` | admin, atendente | Create client |
+| `GET` | `/api/clients/{id}` | auth | Show client |
+| `PUT` | `/api/clients/{id}` | admin, atendente | Update client |
+| `DELETE` | `/api/clients/{id}` | admin | Deactivate client |
+| `GET` | `/api/machines` | auth | List machines (paginated) |
+| `POST` | `/api/machines` | admin, atendente | Create machine |
+| `GET` | `/api/machines/{id}` | auth | Show machine |
+| `PUT` | `/api/machines/{id}` | admin, atendente | Update machine |
+| `DELETE` | `/api/machines/{id}` | admin | Deactivate machine |
 
 ---
 
 ## Documentation
 
-Detailed product scope, roles, business rules, and milestones (Portuguese):
-
-- [`docs/01-visao-geral.md`](docs/01-visao-geral.md)
+| File | Contents |
+|------|----------|
+| [`docs/01-visao-geral.md`](docs/01-visao-geral.md) | Project vision, scope, milestones |
+| [`docs/02-business-rules.md`](docs/02-business-rules.md) | Authoritative business rule catalog (RN-001 – RN-033) |
+| [`docs/03-architecture.md`](docs/03-architecture.md) | Architecture decisions and request flow |
+| [`docs/04-conventions.md`](docs/04-conventions.md) | Naming and organization conventions |
+| [`docs/05-api-reference.md`](docs/05-api-reference.md) | Complete API endpoint reference |
 
 ---
 
-## Future Improvements
+## Roadmap
 
-Directions aligned with a SaaS product, not committed to the current scope:
+### Milestone 1 — Foundation ✅
+- Laravel setup, PostgreSQL, JWT auth
+- Users and roles (create, update)
+- Clients (full CRUD)
+- Machines (full CRUD)
+- Consistent API response layer
+- `make:domain` scaffolding command
 
-- **Docker Compose for PostgreSQL** — Reproducible local database and documented connection defaults.
-- **Dashboard endpoints** — KPIs: open tickets, SLA-style metrics, technician workload.
-- **Multi-tenancy** — Isolate data per company (tenant_id or dedicated databases).
-- **Email notifications** — Ticket updates, assignment, work order completion.
-- **API versioning and OpenAPI** — Stable contracts and generated documentation for integrators.
-- **OAuth / API clients** — Third-party integrations beyond first-party tokens.
-- **Billing and plans** — Subscription tiers per tenant.
-- **Reporting** — Export and scheduled reports for operations management.
+### Milestone 2 — Tickets 🔜
+- Ticket CRUD with status and priority
+- Policy-gated status transitions
+- Business rule enforcement (RN-013 – RN-020)
+
+### Milestone 3 — Work Orders
+- Ticket → work order conversion
+- Transactions and numbering
+- Lifecycle control (RN-021 – RN-025)
+
+### Milestone 4 — Files and History
+- File uploads (images, PDF)
+- Physical storage cleanup
+- Automatic audit history
+
+### Milestone 5 — Queue and Notifications
+- Queue workers
+- Email/push notifications on key events
+
+### Milestone 6 — Refinement
+- Full test coverage
+- OpenAPI / Swagger documentation
+- Portfolio readiness
 
 ---
 
 ## License
 
-This project is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT

@@ -436,3 +436,62 @@ HelpDesk SaaS conventions prioritize:
 - **Maintainability** — Thin HTTP layer, business logic in Actions, rules traceable to `RN-###`
 
 When adding a feature: choose the domain → add Action + Request + Policy + Resource + invokable Controller → expose REST or action route → name tables and columns per this document. If a convention should change, update this file before spreading a new pattern across the codebase.
+
+---
+
+## Domain Scaffolding Convention
+
+Use the `make:domain` command to bootstrap a new domain module consistently:
+
+```bash
+# Minimal (Model + Policy + Exception)
+php artisan make:domain Ticket
+
+# Full directory structure
+php artisan make:domain Ticket --full
+
+# Full + test stubs
+php artisan make:domain Ticket --full --tests
+```
+
+This ensures every domain starts with the same layout. After scaffolding, fill in the generated files rather than creating them by hand.
+
+---
+
+## Deactivation Convention
+
+Entities that may be referenced by other records (clients, machines) are **deactivated** rather than hard-deleted. This preserves history and referential integrity.
+
+| Controller | Route | Behavior |
+|------------|-------|----------|
+| `DeactivateClientController` | `DELETE /api/clients/{id}` | Sets `is_active = false` |
+| `DeactivateMachineController` | `DELETE /api/machines/{id}` | Sets `is_active = false` |
+
+The controller name uses `Deactivate` (not `Delete`) to make intent explicit. The action returns the updated resource (not an empty `204`) so the caller can observe the new state.
+
+Hard delete is only used when no downstream records can reference the entity.
+
+---
+
+## Response Conventions
+
+### Single resource
+```php
+ApiResponse::success(data: new ClientResource($client), message: '...');
+ApiResponse::created(data: new ClientResource($client), message: '...');
+```
+
+### Paginated list
+```php
+ApiResponse::paginated(
+    collection: ClientResource::collection($paginator),
+    message: 'Clients retrieved successfully.',
+);
+```
+
+### Deactivation / state change (returns updated resource)
+```php
+ApiResponse::success(data: new ClientResource($client), message: 'Client deactivated successfully.');
+```
+
+Avoid `ApiResponse::deleted()` for deactivation — the entity still exists and returning it confirms the new state to the caller.
