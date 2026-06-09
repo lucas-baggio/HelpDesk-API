@@ -13,8 +13,10 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO: enforce UserPolicy when Auth domain and auth middleware are in place.
-        return true;
+        /** @var User $user */
+        $user = $this->route('user');
+
+        return $this->user()?->can('update', $user) ?? false;
     }
 
     /**

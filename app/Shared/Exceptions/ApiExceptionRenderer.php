@@ -9,6 +9,8 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
@@ -39,6 +41,28 @@ final class ApiExceptionRenderer
 
             return ApiResponse::error(
                 $exception->getMessage() ?: 'Unauthenticated.',
+                status: HttpStatus::UNAUTHORIZED,
+            );
+        });
+
+        $exceptions->render(function (TokenExpiredException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return ApiResponse::error(
+                'Token has expired.',
+                status: HttpStatus::UNAUTHORIZED,
+            );
+        });
+
+        $exceptions->render(function (TokenInvalidException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return ApiResponse::error(
+                'Token is invalid.',
                 status: HttpStatus::UNAUTHORIZED,
             );
         });

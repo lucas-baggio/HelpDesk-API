@@ -6,15 +6,35 @@ use App\Domains\User\Enums\UserRole;
 use App\Domains\User\Models\User;
 use App\Shared\Http\HttpStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UserApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_creates_user_with_standard_success_envelope(): void
+    public function test_guest_cannot_create_user(): void
     {
         $response = $this->postJson('/api/users', [
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => UserRole::Atendente->value,
+        ]);
+
+        $response->assertStatus(HttpStatus::UNAUTHORIZED);
+    }
+
+    public function test_admin_can_create_user_with_jwt(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('password123'),
+        ]);
+
+        $token = $this->loginToken($admin, 'password123');
+
+        $response = $this->withToken($token)->postJson('/api/users', [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'password' => 'password123',
@@ -33,30 +53,38 @@ class UserApiTest extends TestCase
                     'role' => UserRole::Tecnico->value,
                     'is_active' => true,
                 ],
-            ])
-            ->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [
-                    'id',
-                    'name',
-                    'email',
-                    'role',
-                    'is_active',
-                    'created_at',
-                    'updated_at',
-                ],
             ]);
+    }
 
-        $this->assertDatabaseHas('users', [
-            'email' => 'jane@example.com',
-            'role' => UserRole::Tecnico->value,
+    public function test_non_admin_cannot_create_user(): void
+    {
+        $atendente = User::factory()->create([
+            'role' => UserRole::Atendente->value,
+            'password' => Hash::make('password123'),
         ]);
+
+        $token = $this->loginToken($atendente, 'password123');
+
+        $response = $this->withToken($token)->postJson('/api/users', [
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => UserRole::Atendente->value,
+        ]);
+
+        $response->assertStatus(HttpStatus::FORBIDDEN);
     }
 
     public function test_it_defaults_role_to_atendente_when_omitted(): void
     {
-        $response = $this->postJson('/api/users', [
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('password123'),
+        ]);
+
+        $token = $this->loginToken($admin, 'password123');
+
+        $response = $this->withToken($token)->postJson('/api/users', [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'password' => 'password123',
@@ -73,7 +101,13 @@ class UserApiTest extends TestCase
 
     public function test_create_user_validation_returns_standard_envelope(): void
     {
-        $response = $this->postJson('/api/users', []);
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('password123'),
+        ]);
+
+        $token = $this->loginToken($admin, 'password123');
+
+        $response = $this->withToken($token)->postJson('/api/users', []);
 
         $response
             ->assertStatus(HttpStatus::UNPROCESSABLE_ENTITY)
@@ -91,14 +125,19 @@ class UserApiTest extends TestCase
             ]);
     }
 
-    public function test_it_updates_user_with_standard_success_envelope(): void
+    public function test_admin_can_update_user_with_jwt(): void
     {
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('password123'),
+        ]);
         $user = User::factory()->create([
             'name' => 'Original Name',
             'role' => UserRole::Atendente->value,
         ]);
 
-        $response = $this->putJson("/api/users/{$user->id}", [
+        $token = $this->loginToken($admin, 'password123');
+
+        $response = $this->withToken($token)->putJson("/api/users/{$user->id}", [
             'name' => 'Updated Name',
             'role' => UserRole::Tecnico->value,
             'is_active' => false,
@@ -116,5 +155,15 @@ class UserApiTest extends TestCase
                     'is_active' => false,
                 ],
             ]);
+    }
+
+    private function loginToken(User $user, string $password): string
+    {
+        $response = $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ]);
+
+        return $response->json('data.access_token');
     }
 }

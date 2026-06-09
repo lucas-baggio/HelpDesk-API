@@ -4,6 +4,7 @@ namespace App\Domains\User\Requests;
 
 use App\Domains\User\DTOs\CreateUserData;
 use App\Domains\User\Enums\UserRole;
+use App\Domains\User\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -12,8 +13,7 @@ class CreateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO: enforce UserPolicy when Auth domain and auth middleware are in place.
-        return true;
+        return $this->user()?->can('create', User::class) ?? false;
     }
 
     /**
