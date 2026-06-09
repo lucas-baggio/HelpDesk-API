@@ -66,7 +66,7 @@ app/
 │   ├── User/         # User management, roles, UserPolicy
 │   ├── Client/       # Client CRUD, ClientPolicy
 │   ├── Machine/      # Machine CRUD linked to clients, MachinePolicy
-│   ├── Ticket/       # (Milestone 2)
+│   ├── Ticket/       # Chamados + transições de status, TicketPolicy
 │   └── WorkOrder/    # (Milestone 3)
 │
 ├── Shared/
@@ -85,7 +85,7 @@ app/
 | `User` | Create, Update (list/show/delete pending) |
 | `Client` | Full CRUD + pagination + deactivation |
 | `Machine` | Full CRUD + pagination + deactivation |
-| `Ticket` | Planned — Milestone 2 |
+| `Ticket` | Full CRUD + status transitions (start, resolve, cancel) |
 | `WorkOrder` | Planned — Milestone 3 |
 
 **Domains** — Each directory is a self-contained module for one bounded context: its own models, actions, HTTP layer, and policies. Cross-domain calls should go through explicit Actions or small application services, not through foreign controllers.
