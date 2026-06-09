@@ -2,7 +2,9 @@
 
 namespace App\Shared\Http;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use stdClass;
@@ -32,6 +34,26 @@ final class ApiResponse
         string $message = 'Resource deleted successfully',
     ): JsonResponse {
         return self::success(new stdClass, $message, HttpStatus::OK);
+    }
+
+    public static function paginated(
+        AnonymousResourceCollection $collection,
+        string $message = 'Operation completed successfully',
+    ): JsonResponse {
+        /** @var LengthAwarePaginator $paginator */
+        $paginator = $collection->resource;
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $collection->resolve(request()),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ], HttpStatus::OK);
     }
 
     public static function error(
