@@ -36,7 +36,7 @@ O projeto serve para praticar e consolidar conhecimentos em:
 | Usuários e permissões | ✅ Implementado (create, update) |
 | Clientes | ✅ Implementado (CRUD completo) |
 | Máquinas | ✅ Implementado (CRUD completo) |
-| Chamados | 🔜 Próximo |
+| Chamados | ✅ Implementado (CRUD + transições de status) |
 | Ordens de Serviço | 🔜 Planejado |
 | Upload de arquivos | 🔜 Planejado |
 | Histórico e auditoria | 🔜 Planejado |

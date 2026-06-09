@@ -458,6 +458,226 @@ Deactivate a machine (`is_active → false`). Restricted to `admin`.
 
 ---
 
+---
+
+## Tickets
+
+### `GET /api/tickets`
+
+List tickets with optional filters. Returns paginated results.
+
+**Auth required:** Bearer (any role)
+
+**Query parameters**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `client_id` | uuid | Filter by client |
+| `status` | string | Filter by status: `aberto`, `em_andamento`, `resolvido`, `cancelado` |
+| `priority` | string | Filter by priority: `baixa`, `media`, `alta` |
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Tickets retrieved successfully.",
+  "data": [
+    {
+      "id": "019ead...",
+      "client_id": "019ead...",
+      "machine_id": null,
+      "created_by": "019ead...",
+      "resolved_by": null,
+      "title": "Impressora HP P1102 com erro",
+      "description": "Parou após atualização do driver.",
+      "priority": "alta",
+      "status": "aberto",
+      "resolved_at": null,
+      "created_at": "2026-06-09T19:00:50.000000Z",
+      "updated_at": "2026-06-09T19:00:50.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 1,
+    "last_page": 1
+  }
+}
+```
+
+---
+
+### `POST /api/tickets`
+
+Create a new ticket. Restricted to `admin` and `atendente`.
+
+**Auth required:** Bearer — `admin`, `atendente`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `client_id` | uuid | Yes | Must exist in `clients` |
+| `machine_id` | uuid | No | When provided, must belong to `client_id` |
+| `title` | string | Yes | Max 255 |
+| `description` | string | Yes | |
+| `priority` | string | Yes | `baixa`, `media`, `alta` |
+
+**Success `201`**
+
+```json
+{
+  "success": true,
+  "message": "Ticket created successfully.",
+  "data": {
+    "id": "019ead...",
+    "status": "aberto",
+    "priority": "alta",
+    ...
+  }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Insufficient role (`tecnico` cannot create) |
+| `422` | Validation failed or machine belongs to a different client |
+
+---
+
+### `GET /api/tickets/{id}`
+
+Retrieve a single ticket.
+
+**Auth required:** Bearer (any role)
+
+**Success `200`** — Returns full ticket object.
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `404` | Ticket not found |
+
+---
+
+### `PUT /api/tickets/{id}`
+
+Update ticket fields (title, description, priority, machine_id). Closed tickets (`resolvido` or `cancelado`) cannot be updated.
+
+**Auth required:** Bearer — `admin`, `atendente`
+
+All fields optional.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `title` | string | Max 255 |
+| `description` | string | |
+| `priority` | string | `baixa`, `media`, `alta` |
+| `machine_id` | uuid | Nullable; must belong to same client |
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Ticket updated successfully.",
+  "data": { ... }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `422` | `TICKET_ALREADY_CLOSED` — ticket is resolved or cancelled |
+| `422` | `TICKET_MACHINE_CLIENT_MISMATCH` — machine from different client |
+
+---
+
+### `POST /api/tickets/{id}/start`
+
+Move ticket from `aberto` to `em_andamento`. Restricted to `admin` and `tecnico` (RN-018).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Ticket moved to in progress.",
+  "data": { "status": "em_andamento", ... }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Insufficient role |
+| `422` | `TICKET_CANNOT_START` — ticket is not in `aberto` status |
+
+---
+
+### `POST /api/tickets/{id}/resolve`
+
+Resolve the ticket. Records `resolved_by` and `resolved_at` (RN-019). Cannot resolve a cancelled ticket (RN-017). Restricted to `admin` and `tecnico`.
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Ticket resolved successfully.",
+  "data": {
+    "status": "resolvido",
+    "resolved_by": "019ead...",
+    "resolved_at": "2026-06-09T19:01:04.000000Z",
+    ...
+  }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Insufficient role |
+| `422` | `TICKET_CANCELLED_CANNOT_RESOLVE` — RN-017 |
+| `422` | `TICKET_ALREADY_RESOLVED` — ticket is already resolved |
+
+---
+
+### `POST /api/tickets/{id}/cancel`
+
+Cancel the ticket. Already-closed tickets cannot be cancelled. Restricted to `admin` and `tecnico`.
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Ticket cancelled successfully.",
+  "data": { "status": "cancelado", ... }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Insufficient role |
+| `422` | `TICKET_ALREADY_CLOSED` — ticket is already resolved or cancelled |
+
+---
+
 ## Error Reference
 
 ### Standard error envelope

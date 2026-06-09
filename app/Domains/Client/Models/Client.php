@@ -3,6 +3,7 @@
 namespace App\Domains\Client\Models;
 
 use App\Domains\Machine\Models\Machine;
+use App\Domains\Ticket\Models\Ticket;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -45,6 +46,12 @@ class Client extends Model
     public function machines(): HasMany
     {
         return $this->hasMany(Machine::class);
+    }
+
+    /** @return HasMany<Ticket, $this> */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
     }
 
     protected static function newFactory(): ClientFactory

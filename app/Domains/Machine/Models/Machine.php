@@ -3,11 +3,13 @@
 namespace App\Domains\Machine\Models;
 
 use App\Domains\Client\Models\Client;
+use App\Domains\Ticket\Models\Ticket;
 use Database\Factories\MachineFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Machine extends Model
 {
@@ -38,6 +40,12 @@ class Machine extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /** @return HasMany<Ticket, $this> */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
     }
 
     protected static function newFactory(): MachineFactory

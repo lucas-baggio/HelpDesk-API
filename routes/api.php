@@ -7,6 +7,13 @@ use App\Domains\Client\Controllers\DeactivateClientController;
 use App\Domains\Client\Controllers\ListClientsController;
 use App\Domains\Client\Controllers\ShowClientController;
 use App\Domains\Client\Controllers\UpdateClientController;
+use App\Domains\Ticket\Controllers\CancelTicketController;
+use App\Domains\Ticket\Controllers\CreateTicketController;
+use App\Domains\Ticket\Controllers\ListTicketsController;
+use App\Domains\Ticket\Controllers\ResolveTicketController;
+use App\Domains\Ticket\Controllers\ShowTicketController;
+use App\Domains\Ticket\Controllers\StartTicketController;
+use App\Domains\Ticket\Controllers\UpdateTicketController;
 use App\Domains\Machine\Controllers\CreateMachineController;
 use App\Domains\Machine\Controllers\DeactivateMachineController;
 use App\Domains\Machine\Controllers\ListMachinesController;
@@ -41,6 +48,14 @@ Route::middleware('auth:api')->group(function (): void {
     Route::get('/clients/{client}', ShowClientController::class);
     Route::put('/clients/{client}', UpdateClientController::class);
     Route::delete('/clients/{client}', DeactivateClientController::class);
+
+    Route::get('/tickets', ListTicketsController::class);
+    Route::post('/tickets', CreateTicketController::class);
+    Route::get('/tickets/{ticket}', ShowTicketController::class);
+    Route::put('/tickets/{ticket}', UpdateTicketController::class);
+    Route::post('/tickets/{ticket}/start', StartTicketController::class);
+    Route::post('/tickets/{ticket}/resolve', ResolveTicketController::class);
+    Route::post('/tickets/{ticket}/cancel', CancelTicketController::class);
 
     Route::get('/machines', ListMachinesController::class);
     Route::post('/machines', CreateMachineController::class);

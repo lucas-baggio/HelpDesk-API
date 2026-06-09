@@ -18,7 +18,7 @@ The focus is not a tutorial CRUD app, but a product-shaped codebase with explici
 | Users and roles (Admin, Technician, Attendant) — Create, Update | ✅ Done |
 | Clients — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
 | Machines — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
-| Support Tickets | 🔜 Next |
+| Support Tickets | ✅ Implemented |
 | Work Orders | 🔜 Planned |
 | File uploads | 🔜 Planned |
 | Change history / audit trail | 🔜 Planned |
@@ -221,6 +221,13 @@ Quick overview:
 | `GET` | `/api/machines/{id}` | auth | Show machine |
 | `PUT` | `/api/machines/{id}` | admin, atendente | Update machine |
 | `DELETE` | `/api/machines/{id}` | admin | Deactivate machine |
+| `GET` | `/api/tickets` | auth | List tickets (paginated, filterable) |
+| `POST` | `/api/tickets` | admin, atendente | Create ticket |
+| `GET` | `/api/tickets/{id}` | auth | Show ticket |
+| `PUT` | `/api/tickets/{id}` | admin, atendente | Update ticket |
+| `POST` | `/api/tickets/{id}/start` | admin, tecnico | Move to in progress |
+| `POST` | `/api/tickets/{id}/resolve` | admin, tecnico | Resolve ticket |
+| `POST` | `/api/tickets/{id}/cancel` | admin, tecnico | Cancel ticket |
 
 ---
 
@@ -246,7 +253,7 @@ Quick overview:
 - Consistent API response layer
 - `make:domain` scaffolding command
 
-### Milestone 2 — Tickets 🔜
+### Milestone 2 — Tickets ✅
 - Ticket CRUD with status and priority
 - Policy-gated status transitions
 - Business rule enforcement (RN-013 – RN-020)
