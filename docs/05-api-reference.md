@@ -197,13 +197,13 @@ List clients (paginated). All authenticated roles.
       "cpf_cnpj": "12.345.678/0001-99",
       "phone": "(11) 99999-9999",
       "address": {
-        "street": "Rua das Flores",
+        "street": "Main Street",
         "number": "123",
         "complement": null,
-        "district": "Centro",
-        "city": "São Paulo",
-        "state": "SP",
-        "zip_code": "01310-100"
+        "district": "Downtown",
+        "city": "New York",
+        "state": "NY",
+        "zip_code": "10001"
       },
       "is_active": true,
       "created_at": "...",
@@ -489,8 +489,8 @@ List tickets with optional filters. Returns paginated results.
       "machine_id": null,
       "created_by": "019ead...",
       "resolved_by": null,
-      "title": "Impressora HP P1102 com erro",
-      "description": "Parou após atualização do driver.",
+      "title": "HP P1102 printer not responding",
+      "description": "Stopped working after driver update.",
       "priority": "alta",
       "status": "aberto",
       "resolved_at": null,
@@ -704,7 +704,7 @@ List work orders with optional filters. Returns paginated results.
       "id": "019ead...",
       "ticket_id": "019ead...",
       "number": "OS-00001",
-      "description": "HD substituído e RAID configurado.",
+      "description": "Hard drive replaced and RAID reconfigured.",
       "service_value": "1200.00",
       "status": "aberta",
       "created_at": "2026-06-10T16:36:24.000000Z",
@@ -1001,3 +1001,111 @@ Delete a file. Also removes the physical file from storage (RN-027). Restricted 
   }
 }
 ```
+
+---
+
+## History
+
+The History domain provides a **read-only** audit trail of meaningful system events. Entries are created automatically by Eloquent Observers (RN-030 – RN-033) — they cannot be created or deleted via the API.
+
+### History object
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "entity_type": "ticket | work_order | work_order_file",
+  "entity_id": "uuid",
+  "action": "ticket.created | ticket.status_changed | work_order.created | work_order.status_changed | work_order.service_value_updated | file.uploaded | file.deleted",
+  "description": "Human-readable description of the change.",
+  "created_at": "2026-06-10T20:00:00.000000Z"
+}
+```
+
+### Recorded actions
+
+| Action | Trigger |
+|---|---|
+| `ticket.created` | Ticket created via `POST /tickets` |
+| `ticket.status_changed` | `POST /tickets/{id}/start`, `/resolve`, `/cancel` |
+| `work_order.created` | Work order created via `POST /work-orders` |
+| `work_order.status_changed` | `POST /work-orders/{id}/start`, `/finalize` |
+| `work_order.service_value_updated` | `PUT /work-orders/{id}` when `service_value` changes (RN-033) |
+| `file.uploaded` | File uploaded via `POST /work-orders/{id}/files` |
+| `file.deleted` | File deleted via `DELETE /work-orders/{id}/files/{fileId}` |
+
+---
+
+### `GET /api/histories`
+
+List all history entries, ordered by most recent. Supports filtering by entity.
+
+**Auth required:** Bearer — all roles
+
+**Query parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `entity_type` | string | Filter by entity type (`ticket`, `work_order`, `work_order_file`) |
+| `entity_id` | uuid | Filter by specific entity UUID |
+| `user_id` | uuid | Filter by the user who performed the action |
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "History retrieved successfully.",
+  "data": [
+    {
+      "id": "...",
+      "user_id": "...",
+      "entity_type": "ticket",
+      "entity_id": "...",
+      "action": "ticket.status_changed",
+      "description": "Ticket status changed from \"aberto\" to \"em_andamento\".",
+      "created_at": "2026-06-10T21:00:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 1,
+    "last_page": 1
+  }
+}
+```
+
+---
+
+### `GET /api/histories/{id}`
+
+Retrieve a single history entry.
+
+**Auth required:** Bearer — all roles
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "History entry retrieved successfully.",
+  "data": {
+    "id": "...",
+    "user_id": "...",
+    "entity_type": "work_order",
+    "entity_id": "...",
+    "action": "work_order.service_value_updated",
+    "description": "Work order OS-00001 service value changed from \"100\" to \"999.99\".",
+    "created_at": "2026-06-10T22:00:00.000000Z"
+  }
+}
+```
+
+**Errors**
+
+| Status | Description |
+|--------|-------------|
+| `401` | Unauthenticated |
+| `403` | Insufficient permissions |
+| `404` | History entry not found |

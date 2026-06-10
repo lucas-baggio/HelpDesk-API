@@ -2,7 +2,7 @@
 
 HelpDesk SaaS is an **API-only** Laravel application. This document describes how the codebase is organized, how requests flow through the system, and why **Pragmatic Modular Laravel Architecture** was adopted as the structural baseline.
 
-Related reading: product scope and business rules in [`01-visao-geral.md`](01-visao-geral.md).
+Related reading: product scope and business rules in [`01-overview.md`](01-overview.md).
 
 ---
 
@@ -66,9 +66,10 @@ app/
 │   ├── User/         # User management, roles, UserPolicy
 │   ├── Client/       # Client CRUD, ClientPolicy
 │   ├── Machine/      # Machine CRUD linked to clients, MachinePolicy
-│   ├── Ticket/       # Chamados + transições de status, TicketPolicy
-│   ├── WorkOrder/    # OS vinculadas a tickets, lifecycle aberta→finalizada
-│   └── FileUpload/   # Anexos de OS (upload, download, exclusão física)
+│   ├── Ticket/       # Support tickets + status transitions, TicketPolicy
+│   ├── WorkOrder/    # Work orders linked to tickets, lifecycle open→finalized
+│   ├── FileUpload/   # Work order attachments (upload, download, physical delete)
+│   └── History/      # Automatic audit log via Observers (RN-030 – RN-033)
 │
 ├── Shared/
 │   ├── Exceptions/   # ApiException hierarchy + ApiExceptionRenderer
@@ -89,6 +90,7 @@ app/
 | `Ticket` | Full CRUD + status transitions (start, resolve, cancel) |
 | `WorkOrder` | Full CRUD + status transitions (start, finalize) + auto-numbered OS |
 | `FileUpload` | Upload, list, download, delete (RN-026 – RN-029) |
+| `History` | Read-only audit log — auto-recorded via Eloquent Observers (RN-030 – RN-033) |
 
 **Domains** — Each directory is a self-contained module for one bounded context: its own models, actions, HTTP layer, and policies. Cross-domain calls should go through explicit Actions or small application services, not through foreign controllers.
 
@@ -305,6 +307,22 @@ API authentication uses **JWT** via [`php-open-source-saver/jwt-auth`](https://g
 - User status (`is_active`) is checked at login; inactive users receive `403 Inactive account`
 
 The `Auth` domain owns the login and `/me` endpoints; no session-based or cookie-based auth is used.
+
+---
+
+## Audit Observers (History Domain)
+
+Business rules RN-030–RN-033 require that relevant system changes generate history entries automatically, without relying on manual logging. This is implemented through **Eloquent Model Observers** registered in `AppServiceProvider::boot()`.
+
+| Observer | Events handled | RN |
+|---|---|---|
+| `TicketObserver` | `created` → `ticket.created`; `updated` (status) → `ticket.status_changed` | RN-030, RN-032 |
+| `WorkOrderObserver` | `created` → `work_order.created`; `updated` (status) → `work_order.status_changed`; `updated` (service_value) → `work_order.service_value_updated` | RN-030, RN-032, RN-033 |
+| `WorkOrderFileObserver` | `created` → `file.uploaded`; `deleted` → `file.deleted` | RN-027, RN-030 |
+
+Each observer calls `RecordHistoryAction` with a typed `RecordHistoryData` DTO. Observers silently skip recording when no authenticated user is present (e.g., seeder or CLI context).
+
+> **Implementation note:** `getRawOriginal('status')` is used instead of `getOriginal('status')` because Laravel 11 applies enum casts when accessing `getOriginal()`, which would return the enum object and cause a type error during string interpolation. `getRawOriginal()` returns the raw database string value.
 
 ---
 

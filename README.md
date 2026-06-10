@@ -109,6 +109,7 @@ The complete rule set lives in [`docs/02-business-rules.md`](docs/02-business-ru
 | Machines | Must belong to a client (RN-009); serial number unique per client (RN-011) |
 | Tickets | Cancelled ticket cannot be resolved (RN-017); only tecnico/admin may change status (RN-018) |
 | Work Orders | One work order per ticket max (RN-021); finalized cannot return to open (RN-024) |
+| History | Auto-recorded via observers (RN-030); status changes and critical edits are traceable (RN-032, RN-033) |
 
 ---
 
@@ -238,6 +239,8 @@ Quick overview:
 | `POST` | `/api/work-orders/{id}/files` | admin, tecnico | Upload file (JPEG, PNG, GIF, WebP, PDF — max 10 MB) |
 | `GET` | `/api/work-orders/{id}/files/{file}/download` | auth | Download file |
 | `DELETE` | `/api/work-orders/{id}/files/{file}` | admin, uploader | Delete file + physical storage |
+| `GET` | `/api/histories` | auth | List audit history (filterable by entity_type, entity_id, user_id) |
+| `GET` | `/api/histories/{id}` | auth | Show single history entry |
 
 ---
 
@@ -245,7 +248,7 @@ Quick overview:
 
 | File | Contents |
 |------|----------|
-| [`docs/01-visao-geral.md`](docs/01-visao-geral.md) | Project vision, scope, milestones |
+| [`docs/01-overview.md`](docs/01-overview.md) | Project vision, scope, milestones |
 | [`docs/02-business-rules.md`](docs/02-business-rules.md) | Authoritative business rule catalog (RN-001 – RN-033) |
 | [`docs/03-architecture.md`](docs/03-architecture.md) | Architecture decisions and request flow |
 | [`docs/04-conventions.md`](docs/04-conventions.md) | Naming and organization conventions |
@@ -273,10 +276,10 @@ Quick overview:
 - Transactions and numbering
 - Lifecycle control (RN-021 – RN-025)
 
-### Milestone 4 — Files and History ✅ (partial)
+### Milestone 4 — Files and History ✅
 - File uploads (images, PDF) ✅
-- Physical storage cleanup
-- Automatic audit history
+- Physical storage cleanup ✅
+- Automatic audit history via Observers (RN-030 – RN-033) ✅
 
 ### Milestone 5 — Queue and Notifications
 - Queue workers

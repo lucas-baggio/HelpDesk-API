@@ -14,6 +14,8 @@ use App\Domains\Ticket\Controllers\ResolveTicketController;
 use App\Domains\Ticket\Controllers\ShowTicketController;
 use App\Domains\Ticket\Controllers\StartTicketController;
 use App\Domains\Ticket\Controllers\UpdateTicketController;
+use App\Domains\History\Controllers\ListHistoriesController;
+use App\Domains\History\Controllers\ShowHistoryController;
 use App\Domains\FileUpload\Controllers\DeleteWorkOrderFileController;
 use App\Domains\FileUpload\Controllers\DownloadWorkOrderFileController;
 use App\Domains\FileUpload\Controllers\ListWorkOrderFilesController;
@@ -80,6 +82,9 @@ Route::middleware('auth:api')->group(function (): void {
         Route::get('/{file}/download', DownloadWorkOrderFileController::class)->name('work-order-files.download');
         Route::delete('/{file}', DeleteWorkOrderFileController::class);
     });
+
+    Route::get('/histories', ListHistoriesController::class);
+    Route::get('/histories/{history}', ShowHistoryController::class);
 
     Route::get('/machines', ListMachinesController::class);
     Route::post('/machines', CreateMachineController::class);
