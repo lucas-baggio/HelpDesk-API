@@ -14,6 +14,10 @@ use App\Domains\Ticket\Controllers\ResolveTicketController;
 use App\Domains\Ticket\Controllers\ShowTicketController;
 use App\Domains\Ticket\Controllers\StartTicketController;
 use App\Domains\Ticket\Controllers\UpdateTicketController;
+use App\Domains\FileUpload\Controllers\DeleteWorkOrderFileController;
+use App\Domains\FileUpload\Controllers\DownloadWorkOrderFileController;
+use App\Domains\FileUpload\Controllers\ListWorkOrderFilesController;
+use App\Domains\FileUpload\Controllers\UploadWorkOrderFileController;
 use App\Domains\WorkOrder\Controllers\CreateWorkOrderController;
 use App\Domains\WorkOrder\Controllers\FinalizeWorkOrderController;
 use App\Domains\WorkOrder\Controllers\ListWorkOrdersController;
@@ -69,6 +73,13 @@ Route::middleware('auth:api')->group(function (): void {
     Route::put('/work-orders/{work_order}', UpdateWorkOrderController::class);
     Route::post('/work-orders/{work_order}/start', StartWorkOrderController::class);
     Route::post('/work-orders/{work_order}/finalize', FinalizeWorkOrderController::class);
+
+    Route::prefix('work-orders/{work_order}/files')->group(function (): void {
+        Route::get('/', ListWorkOrderFilesController::class);
+        Route::post('/', UploadWorkOrderFileController::class);
+        Route::get('/{file}/download', DownloadWorkOrderFileController::class)->name('work-order-files.download');
+        Route::delete('/{file}', DeleteWorkOrderFileController::class);
+    });
 
     Route::get('/machines', ListMachinesController::class);
     Route::post('/machines', CreateMachineController::class);

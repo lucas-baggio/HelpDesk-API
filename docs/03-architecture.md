@@ -67,7 +67,8 @@ app/
 │   ├── Client/       # Client CRUD, ClientPolicy
 │   ├── Machine/      # Machine CRUD linked to clients, MachinePolicy
 │   ├── Ticket/       # Chamados + transições de status, TicketPolicy
-│   └── WorkOrder/    # (Milestone 3)
+│   ├── WorkOrder/    # OS vinculadas a tickets, lifecycle aberta→finalizada
+│   └── FileUpload/   # Anexos de OS (upload, download, exclusão física)
 │
 ├── Shared/
 │   ├── Exceptions/   # ApiException hierarchy + ApiExceptionRenderer
@@ -86,7 +87,8 @@ app/
 | `Client` | Full CRUD + pagination + deactivation |
 | `Machine` | Full CRUD + pagination + deactivation |
 | `Ticket` | Full CRUD + status transitions (start, resolve, cancel) |
-| `WorkOrder` | Planned — Milestone 3 |
+| `WorkOrder` | Full CRUD + status transitions (start, finalize) + auto-numbered OS |
+| `FileUpload` | Upload, list, download, delete (RN-026 – RN-029) |
 
 **Domains** — Each directory is a self-contained module for one bounded context: its own models, actions, HTTP layer, and policies. Cross-domain calls should go through explicit Actions or small application services, not through foreign controllers.
 
