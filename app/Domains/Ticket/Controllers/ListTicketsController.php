@@ -3,6 +3,8 @@
 namespace App\Domains\Ticket\Controllers;
 
 use App\Domains\Ticket\Actions\ListTicketsAction;
+use App\Domains\Ticket\Enums\TicketPriority;
+use App\Domains\Ticket\Enums\TicketStatus;
 use App\Domains\Ticket\Models\Ticket;
 use App\Domains\Ticket\Resources\TicketResource;
 use App\Shared\Http\ApiResponse;
@@ -20,8 +22,8 @@ class ListTicketsController extends ApiController
 
         $tickets = $this->action->execute(
             clientId: $request->query('client_id') ?: null,
-            status: $request->query('status') ?: null,
-            priority: $request->query('priority') ?: null,
+            status: TicketStatus::tryFrom($request->query('status', '')),
+            priority: TicketPriority::tryFrom($request->query('priority', '')),
         );
 
         return ApiResponse::paginated(
