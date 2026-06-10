@@ -4,7 +4,7 @@ This document defines the **functional and behavioral rules** of HelpDesk SaaS. 
 
 It is **not** an implementation guide: it does not prescribe controllers, models, database design, or application architecture.
 
-Related product context: [`01-visao-geral.md`](01-visao-geral.md).
+Related product context: [`01-overview.md`](01-overview.md).
 
 ---
 
