@@ -2,6 +2,8 @@
 
 namespace App\Domains\Ticket\Actions;
 
+use App\Domains\Ticket\Enums\TicketPriority;
+use App\Domains\Ticket\Enums\TicketStatus;
 use App\Domains\Ticket\Models\Ticket;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -14,8 +16,8 @@ class ListTicketsAction
      */
     public function execute(
         ?string $clientId = null,
-        ?string $status = null,
-        ?string $priority = null,
+        ?TicketStatus $status = null,
+        ?TicketPriority $priority = null,
         int $perPage = self::PER_PAGE,
     ): LengthAwarePaginator {
         $query = Ticket::query()->orderByDesc('created_at');
@@ -25,11 +27,11 @@ class ListTicketsAction
         }
 
         if ($status !== null) {
-            $query->where('status', $status);
+            $query->where('status', $status->value);
         }
 
         if ($priority !== null) {
-            $query->where('priority', $priority);
+            $query->where('priority', $priority->value);
         }
 
         return $query->paginate($perPage);

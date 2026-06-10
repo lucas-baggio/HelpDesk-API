@@ -14,6 +14,12 @@ use App\Domains\Ticket\Controllers\ResolveTicketController;
 use App\Domains\Ticket\Controllers\ShowTicketController;
 use App\Domains\Ticket\Controllers\StartTicketController;
 use App\Domains\Ticket\Controllers\UpdateTicketController;
+use App\Domains\WorkOrder\Controllers\CreateWorkOrderController;
+use App\Domains\WorkOrder\Controllers\FinalizeWorkOrderController;
+use App\Domains\WorkOrder\Controllers\ListWorkOrdersController;
+use App\Domains\WorkOrder\Controllers\ShowWorkOrderController;
+use App\Domains\WorkOrder\Controllers\StartWorkOrderController;
+use App\Domains\WorkOrder\Controllers\UpdateWorkOrderController;
 use App\Domains\Machine\Controllers\CreateMachineController;
 use App\Domains\Machine\Controllers\DeactivateMachineController;
 use App\Domains\Machine\Controllers\ListMachinesController;
@@ -56,6 +62,13 @@ Route::middleware('auth:api')->group(function (): void {
     Route::post('/tickets/{ticket}/start', StartTicketController::class);
     Route::post('/tickets/{ticket}/resolve', ResolveTicketController::class);
     Route::post('/tickets/{ticket}/cancel', CancelTicketController::class);
+
+    Route::get('/work-orders', ListWorkOrdersController::class);
+    Route::post('/work-orders', CreateWorkOrderController::class);
+    Route::get('/work-orders/{work_order}', ShowWorkOrderController::class);
+    Route::put('/work-orders/{work_order}', UpdateWorkOrderController::class);
+    Route::post('/work-orders/{work_order}/start', StartWorkOrderController::class);
+    Route::post('/work-orders/{work_order}/finalize', FinalizeWorkOrderController::class);
 
     Route::get('/machines', ListMachinesController::class);
     Route::post('/machines', CreateMachineController::class);

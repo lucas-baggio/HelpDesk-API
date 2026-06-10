@@ -7,11 +7,13 @@ use App\Domains\Machine\Models\Machine;
 use App\Domains\Ticket\Enums\TicketPriority;
 use App\Domains\Ticket\Enums\TicketStatus;
 use App\Domains\User\Models\User;
+use App\Domains\WorkOrder\Models\WorkOrder;
 use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -62,6 +64,12 @@ class Ticket extends Model
     public function resolver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    /** @return HasOne<WorkOrder, $this> */
+    public function workOrder(): HasOne
+    {
+        return $this->hasOne(WorkOrder::class);
     }
 
     protected static function newFactory(): TicketFactory
