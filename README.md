@@ -19,8 +19,8 @@ The focus is not a tutorial CRUD app, but a product-shaped codebase with explici
 | Clients — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
 | Machines — Full CRUD (list, show, create, update, deactivate) | ✅ Done |
 | Support Tickets | ✅ Implemented |
-| Work Orders | 🔜 Planned |
-| File uploads | 🔜 Planned |
+| Work Orders | ✅ Implemented |
+| File uploads | ✅ Implemented |
 | Change history / audit trail | 🔜 Planned |
 | Notifications and queue jobs | 🔜 Planned |
 
@@ -228,6 +228,16 @@ Quick overview:
 | `POST` | `/api/tickets/{id}/start` | admin, tecnico | Move to in progress |
 | `POST` | `/api/tickets/{id}/resolve` | admin, tecnico | Resolve ticket |
 | `POST` | `/api/tickets/{id}/cancel` | admin, tecnico | Cancel ticket |
+| `GET` | `/api/work-orders` | auth | List work orders (paginated, filterable) |
+| `POST` | `/api/work-orders` | admin, tecnico | Create work order linked to a ticket |
+| `GET` | `/api/work-orders/{id}` | auth | Show work order |
+| `PUT` | `/api/work-orders/{id}` | admin, tecnico | Update work order |
+| `POST` | `/api/work-orders/{id}/start` | admin, tecnico | Move to in execution |
+| `POST` | `/api/work-orders/{id}/finalize` | admin, tecnico | Finalize work order |
+| `GET` | `/api/work-orders/{id}/files` | auth | List files attached to work order |
+| `POST` | `/api/work-orders/{id}/files` | admin, tecnico | Upload file (JPEG, PNG, GIF, WebP, PDF — max 10 MB) |
+| `GET` | `/api/work-orders/{id}/files/{file}/download` | auth | Download file |
+| `DELETE` | `/api/work-orders/{id}/files/{file}` | admin, uploader | Delete file + physical storage |
 
 ---
 
@@ -258,13 +268,13 @@ Quick overview:
 - Policy-gated status transitions
 - Business rule enforcement (RN-013 – RN-020)
 
-### Milestone 3 — Work Orders
+### Milestone 3 — Work Orders ✅
 - Ticket → work order conversion
 - Transactions and numbering
 - Lifecycle control (RN-021 – RN-025)
 
-### Milestone 4 — Files and History
-- File uploads (images, PDF)
+### Milestone 4 — Files and History ✅ (partial)
+- File uploads (images, PDF) ✅
 - Physical storage cleanup
 - Automatic audit history
 

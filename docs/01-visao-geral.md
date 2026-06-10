@@ -37,8 +37,8 @@ O projeto serve para praticar e consolidar conhecimentos em:
 | Clientes | ✅ Implementado (CRUD completo) |
 | Máquinas | ✅ Implementado (CRUD completo) |
 | Chamados | ✅ Implementado (CRUD + transições de status) |
-| Ordens de Serviço | 🔜 Planejado |
-| Upload de arquivos | 🔜 Planejado |
+| Ordens de Serviço | ✅ Implementado (CRUD completo + transições de status) |
+| Upload de arquivos | ✅ Implementado (upload, listagem, download, exclusão) |
 | Histórico e auditoria | 🔜 Planejado |
 | Jobs e notificações | 🔜 Planejado |
 
@@ -145,18 +145,18 @@ Resumo por domínio:
 
 ---
 
-### Milestone 3 — Ordem de Serviço
+### Milestone 3 — Ordem de Serviço ✅
 
-* Conversão chamado → OS (transação)
-* Numeração sequencial
-* Lifecycle control (RN-021 – RN-025)
+* Conversão chamado → OS (transação) ✅
+* Numeração sequencial automática (`OS-00001`) ✅
+* Lifecycle control (RN-021 – RN-025) ✅
 
 ---
 
 ### Milestone 4 — Arquivos e Histórico
 
-* Upload (imagem e PDF)
-* Remoção física do storage
+* Upload (imagem e PDF) ✅
+* Remoção física do storage ✅
 * Observer/Event para auditoria automática
 
 ---

@@ -678,6 +678,280 @@ Cancel the ticket. Already-closed tickets cannot be cancelled. Restricted to `ad
 
 ---
 
+## Work Orders
+
+### `GET /api/work-orders`
+
+List work orders with optional filters. Returns paginated results.
+
+**Auth required:** Bearer (any role)
+
+**Query parameters**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `ticket_id` | uuid | Filter by ticket |
+| `status` | string | Filter by status: `aberta`, `em_execucao`, `finalizada` |
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Work orders retrieved successfully.",
+  "data": [
+    {
+      "id": "019ead...",
+      "ticket_id": "019ead...",
+      "number": "OS-00001",
+      "description": "HD substituído e RAID configurado.",
+      "service_value": "1200.00",
+      "status": "aberta",
+      "created_at": "2026-06-10T16:36:24.000000Z",
+      "updated_at": "2026-06-10T16:36:24.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 1,
+    "last_page": 1
+  }
+}
+```
+
+---
+
+### `POST /api/work-orders`
+
+Create a work order linked to a ticket. Restricted to `admin` and `tecnico`. Only one work order per ticket is allowed (RN-021). Cannot be created for a cancelled ticket (RN-022).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `ticket_id` | uuid | Yes | Must exist and not be cancelled |
+| `description` | string | Yes | |
+| `service_value` | decimal | No | Monetary value |
+
+**Success `201`**
+
+```json
+{
+  "success": true,
+  "message": "Work order created successfully.",
+  "data": {
+    "id": "019ead...",
+    "number": "OS-00001",
+    "status": "aberta",
+    ...
+  }
+}
+```
+
+**Errors**
+
+| Status | Code | Reason |
+|--------|------|--------|
+| `403` | — | Insufficient role |
+| `409` | `WORK_ORDER_ALREADY_EXISTS` | Ticket already has a work order (RN-021) |
+| `422` | `WORK_ORDER_TICKET_CANCELLED` | Ticket is cancelled (RN-022) |
+
+---
+
+### `GET /api/work-orders/{id}`
+
+Retrieve a single work order.
+
+**Auth required:** Bearer (any role)
+
+**Success `200`** — Returns full work order object.
+
+---
+
+### `PUT /api/work-orders/{id}`
+
+Update work order fields. Finalized work orders cannot be edited (RN-024).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `description` | string | |
+| `service_value` | decimal | Nullable |
+
+**Errors**
+
+| Status | Code | Reason |
+|--------|------|--------|
+| `422` | `WORK_ORDER_ALREADY_FINALIZED` | Cannot edit a finalized work order |
+
+---
+
+### `POST /api/work-orders/{id}/start`
+
+Move work order from `aberta` to `em_execucao` (RN-023).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Work order moved to in execution.",
+  "data": { "status": "em_execucao", ... }
+}
+```
+
+**Errors**
+
+| Status | Code | Reason |
+|--------|------|--------|
+| `403` | — | Insufficient role |
+| `422` | `WORK_ORDER_CANNOT_START` | Work order is not in `aberta` status |
+
+---
+
+### `POST /api/work-orders/{id}/finalize`
+
+Finalize the work order. Must be in `em_execucao` first. Once finalized, the status cannot be reversed (RN-024).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Work order finalized successfully.",
+  "data": { "status": "finalizada", ... }
+}
+```
+
+**Errors**
+
+| Status | Code | Reason |
+|--------|------|--------|
+| `403` | — | Insufficient role |
+| `422` | `WORK_ORDER_NOT_IN_EXECUTION` | Must be `em_execucao` first |
+| `422` | `WORK_ORDER_ALREADY_FINALIZED` | Already finalized (RN-024) |
+
+---
+
+## Work Order Files
+
+Files are nested under work orders. All endpoints require authentication.
+
+### `GET /api/work-orders/{id}/files`
+
+List all files attached to a work order.
+
+**Auth required:** Bearer (any role)
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "Files retrieved successfully.",
+  "data": [
+    {
+      "id": "019ead...",
+      "work_order_id": "019ead...",
+      "uploaded_by": "019ead...",
+      "file_name": "relatorio.pdf",
+      "mime_type": "application/pdf",
+      "file_size": 512000,
+      "url": "/api/work-orders/{id}/files/{file}/download",
+      "created_at": "2026-06-10T17:00:00.000000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/work-orders/{id}/files`
+
+Upload a file to the work order. Restricted to `admin` and `tecnico` (RN-028).
+
+**Auth required:** Bearer — `admin`, `tecnico`
+
+**Content-Type:** `multipart/form-data`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `file` | file | Required. Allowed: JPEG, PNG, GIF, WebP, PDF. Max 10 MB (RN-026, RN-029). |
+
+**Success `201`**
+
+```json
+{
+  "success": true,
+  "message": "File uploaded successfully.",
+  "data": {
+    "id": "019ead...",
+    "file_name": "relatorio.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 512000,
+    "url": "/api/work-orders/{id}/files/{file}/download",
+    "created_at": "2026-06-10T17:00:00.000000Z"
+  }
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Insufficient role (`atendente` cannot upload) |
+| `422` | Invalid file type (only JPEG, PNG, GIF, WebP, PDF allowed) |
+| `422` | File exceeds 10 MB limit |
+
+---
+
+### `GET /api/work-orders/{id}/files/{file}/download`
+
+Download a file. Returns the binary file as an attachment.
+
+**Auth required:** Bearer (any role)
+
+**Success `200`** — Binary file download with `Content-Disposition: attachment`.
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `404` | File not found |
+
+---
+
+### `DELETE /api/work-orders/{id}/files/{file}`
+
+Delete a file. Also removes the physical file from storage (RN-027). Restricted to `admin` or the original uploader.
+
+**Auth required:** Bearer — `admin` or original uploader
+
+**Success `200`**
+
+```json
+{
+  "success": true,
+  "message": "File deleted successfully.",
+  "data": null
+}
+```
+
+**Errors**
+
+| Status | Reason |
+|--------|--------|
+| `403` | Not the uploader and not admin |
+| `404` | File not found |
+
+---
+
 ## Error Reference
 
 ### Standard error envelope
